@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/ZaharBorisenko/jwt-auth/helper/password"
+	"github.com/ZaharBorisenko/jwt-auth/helpers/password"
 	"github.com/ZaharBorisenko/jwt-auth/models"
 	"github.com/ZaharBorisenko/jwt-auth/storage/repositories"
 	"github.com/google/uuid"
@@ -61,6 +61,20 @@ func (s *UserService) LoginUser(ctx context.Context, req *models.UserLoginDTO) (
 		return nil, fmt.Errorf("invalid password")
 	}
 
+	return &models.UserResponseDTO{
+		Id:        user.Id,
+		UserName:  user.UserName,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+	}, nil
+}
+
+func (s *UserService) ProfileUser(ctx context.Context, id uuid.UUID) (*models.UserResponseDTO, error) {
+	user, err := s.userRepo.GetUserById(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("user not found %w", err)
+	}
 	return &models.UserResponseDTO{
 		Id:        user.Id,
 		UserName:  user.UserName,

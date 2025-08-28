@@ -3,8 +3,10 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ZaharBorisenko/jwt-auth/helpers/jwtToken"
 	"github.com/ZaharBorisenko/jwt-auth/models"
 	"github.com/ZaharBorisenko/jwt-auth/storage/service"
+	"github.com/google/uuid"
 	"net/http"
 )
 
@@ -32,7 +34,6 @@ func WriteJSON(w http.ResponseWriter, statusCode int, data any) {
 func WriteERROR(w http.ResponseWriter, statusCode int, message string) {
 	WriteJSON(w, statusCode, Error{Error: message})
 }
-
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		WriteERROR(w, http.StatusMethodNotAllowed, "method not allowed!")
@@ -96,11 +97,48 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//authentication user
 	loginUser, err := h.userService.LoginUser(r.Context(), &userReq)
 	if err != nil {
 		WriteERROR(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
-	WriteJSON(w, http.StatusOK, loginUser)
+	//generate JWT token
+	token, err := jwtToken.GenerateJWTToken(loginUser.Id, loginUser.Email)
+	if err != nil {
+		WriteERROR(w, http.StatusInternalServerError, "failed to generate token")
+		return
+	}
+
+	//return user and token
+	response := map[string]interface{}{
+		"user":  loginUser,
+		"token": token,
+	}
+
+	WriteJSON(w, http.StatusOK, response)
+}
+
+func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	if idStr == "" {
+		WriteERROR(w, http.StatusBadRequest, "ID parameter is required")
+		return
+	}
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		WriteERROR(w, http.StatusBadRequest, "Invalid UUID format")
+		return
+	}
+
+	user, err := h.userService.ProfileUser(r.Context(), id)
+	if err != nil {
+		WriteERROR(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, user)
 
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/ZaharBorisenko/jwt-auth/models"
+	"github.com/google/uuid"
 )
 
 type UserRepository struct {
@@ -37,6 +38,26 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 	user := models.User{}
 	query := `SELECT id, username, first_name, last_name, email, password, created_at, updated_at FROM users WHERE email = $1`
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
+		&user.Id,
+		&user.UserName,
+		&user.FirstName,
+		&user.LastName,
+		&user.Email,
+		&user.Password,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *UserRepository) GetUserById(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	user := models.User{}
+	query := `SELECT id, username, first_name, last_name, email, password, created_at, updated_at FROM users WHERE id = $1`
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&user.Id,
 		&user.UserName,
 		&user.FirstName,
