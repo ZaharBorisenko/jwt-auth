@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/ZaharBorisenko/jwt-auth/helper/password"
 	"github.com/ZaharBorisenko/jwt-auth/models"
 	"github.com/ZaharBorisenko/jwt-auth/storage/repositories"
@@ -18,8 +19,14 @@ func NewUserService(userRepo *repositories.UserRepository) *UserService {
 }
 
 func (s *UserService) RegisterUser(ctx context.Context, req *models.CreateUserRequestDTO) (*models.User, error) {
-	// 1. Проверить, не существует ли уже пользователь с таким email/username
-	// (это вызовет метод репозитория GetUserByEmail, который ты ещё не написал)
+
+	exists, err := s.userRepo.UserExistsByEmail(ctx, req.Email)
+	if err != nil {
+		return nil, fmt.Errorf("database error: %w", err)
+	}
+	if exists {
+		return nil, fmt.Errorf("user with email %s already exists", req.Email)
+	}
 
 	hashPassword, err := password.HashPassword(req.Password)
 	if err != nil {
@@ -42,5 +49,23 @@ func (s *UserService) RegisterUser(ctx context.Context, req *models.CreateUserRe
 		return nil, err
 	}
 	return &user, nil
+}
 
+func (s *UserService) LoginUser(ctx context.Context, req *models.UserLoginDTO) (*models.UserResponseDTO, error) {
+	user, err := s.userRepo.GetUserByEmail(ctx, req.Email)
+	if err != nil {
+		return nil, fmt.Errorf("user not found %w", err)
+	}
+
+	if !password.CheckPassword(req.Password, user.Password) {
+		return nil, fmt.Errorf("invalid password")
+	}
+
+	return &models.UserResponseDTO{
+		Id:        user.Id,
+		UserName:  user.UserName,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+	}, nil
 }

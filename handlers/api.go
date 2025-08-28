@@ -62,7 +62,6 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	createdUser, err := h.userService.RegisterUser(r.Context(), &userReq)
 	if err != nil {
-		// Обрабатываем ошибки от сервиса (например, "user already exists")
 		WriteERROR(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -76,4 +75,32 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusCreated, response)
+}
+
+func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		WriteERROR(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	defer r.Body.Close()
+
+	userReq := models.UserLoginDTO{}
+
+	err := json.NewDecoder(r.Body).Decode(&userReq)
+	if err != nil {
+		WriteERROR(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	if userReq.Email == "" || userReq.Password == "" {
+		WriteERROR(w, http.StatusBadRequest, "email or password is required")
+		return
+	}
+
+	loginUser, err := h.userService.LoginUser(r.Context(), &userReq)
+	if err != nil {
+		WriteERROR(w, http.StatusBadRequest, err.Error())
+	}
+
+	WriteJSON(w, http.StatusOK, loginUser)
+
 }

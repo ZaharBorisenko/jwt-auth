@@ -9,6 +9,7 @@ import (
 func MakeHTTPHandler(userService *service.UserService) http.Handler {
 	userHandler := handlers.NewUserHandler(userService)
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /user/", userHandler.Register)
+	mux.HandleFunc("POST /register", userHandler.Register)
+	mux.HandleFunc("POST /login", userHandler.Login)
 	return mux
 }

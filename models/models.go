@@ -31,6 +31,10 @@ type UserResponseDTO struct {
 	LastName  string    `json:"lastName"`
 	Email     string    `json:"email"`
 }
+type UserLoginDTO struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
 
 type Config struct {
 	HOST     string
