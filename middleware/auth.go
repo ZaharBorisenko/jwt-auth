@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"github.com/ZaharBorisenko/jwt-auth/storage"
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"os"
@@ -11,7 +12,7 @@ import (
 
 var jwtSecretKey = os.Getenv("JWT_SECRET_KEY")
 
-func AuthMiddleware(next http.Handler) http.Handler {
+func AuthMiddleware(redisClient *storage.RedisClient, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//get token for header
 		authHeader := r.Header.Get("Authorization")
@@ -28,6 +29,17 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		tokenString := parts[1]
+
+		isBlacklisted, err := redisClient.IsInBlacklist(r.Context(), tokenString)
+		if err != nil {
+			http.Error(w, "Server error", http.StatusInternalServerError)
+			return
+		}
+
+		if isBlacklisted {
+			http.Error(w, "Token invalidated", http.StatusUnauthorized)
+			return
+		}
 
 		//parsing and validating tokens
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {

@@ -5,17 +5,21 @@ import (
 	"fmt"
 	"github.com/ZaharBorisenko/jwt-auth/helpers/jwtToken"
 	"github.com/ZaharBorisenko/jwt-auth/models"
+	"github.com/ZaharBorisenko/jwt-auth/storage"
 	"github.com/ZaharBorisenko/jwt-auth/storage/service"
 	"github.com/google/uuid"
 	"net/http"
+	"strings"
+	"time"
 )
 
 type UserHandler struct {
 	userService *service.UserService
+	redisClient *storage.RedisClient
 }
 
-func NewUserHandler(userService *service.UserService) *UserHandler {
-	return &UserHandler{userService: userService}
+func NewUserHandler(userService *service.UserService, redisClient *storage.RedisClient) *UserHandler {
+	return &UserHandler{userService: userService, redisClient: redisClient}
 }
 
 type Error struct {
@@ -118,6 +122,38 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, response)
+}
+
+func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		WriteERROR(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		WriteERROR(w, http.StatusUnauthorized, "Authorization header required")
+		return
+	}
+
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		WriteERROR(w, http.StatusUnauthorized, "Invalid authorization format")
+		return
+	}
+
+	tokenString := parts[1]
+
+	expiration := 72 * time.Hour
+	err := h.redisClient.AddToBlackList(r.Context(), tokenString, expiration)
+	if err != nil {
+		WriteERROR(w, http.StatusInternalServerError, "Failed to logout")
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]string{
+		"message": "Successfully logged out",
+	})
 }
 
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {

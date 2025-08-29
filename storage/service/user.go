@@ -5,17 +5,19 @@ import (
 	"fmt"
 	"github.com/ZaharBorisenko/jwt-auth/helpers/password"
 	"github.com/ZaharBorisenko/jwt-auth/models"
+	"github.com/ZaharBorisenko/jwt-auth/storage"
 	"github.com/ZaharBorisenko/jwt-auth/storage/repositories"
 	"github.com/google/uuid"
 	"time"
 )
 
 type UserService struct {
-	userRepo *repositories.UserRepository
+	userRepo    *repositories.UserRepository
+	redisClient *storage.RedisClient
 }
 
-func NewUserService(userRepo *repositories.UserRepository) *UserService {
-	return &UserService{userRepo: userRepo}
+func NewUserService(userRepo *repositories.UserRepository, redisClient *storage.RedisClient) *UserService {
+	return &UserService{userRepo: userRepo, redisClient: redisClient}
 }
 
 func (s *UserService) RegisterUser(ctx context.Context, req *models.CreateUserRequestDTO) (*models.User, error) {
