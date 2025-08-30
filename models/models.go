@@ -12,6 +12,7 @@ type User struct {
 	Email     string    `json:"email"`
 	FirstName string    `json:"firstName"`
 	LastName  string    `json:"lastName"`
+	Role      string    `json:"role"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -30,6 +31,7 @@ type UserResponseDTO struct {
 	FirstName string    `json:"firstName"`
 	LastName  string    `json:"lastName"`
 	Email     string    `json:"email"`
+	Role      string    `json:"role"`
 }
 type UserLoginDTO struct {
 	Email    string `json:"email"`

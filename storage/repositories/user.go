@@ -16,10 +16,10 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 }
 
 func (r *UserRepository) CreateUser(ctx context.Context, user *models.User) error {
-	query := `INSERT INTO users (id, username, first_name, last_name, email, password, created_at, updated_at) 
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+	query := `INSERT INTO users (id, username, first_name, last_name, email, password, role, created_at, updated_at) 
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
-	_, err := r.db.ExecContext(ctx, query, user.Id, user.UserName, user.FirstName, user.LastName, user.Email, user.Password, user.CreatedAt, user.UpdatedAt)
+	_, err := r.db.ExecContext(ctx, query, user.Id, user.UserName, user.FirstName, user.LastName, user.Email, user.Password, user.Role, user.CreatedAt, user.UpdatedAt)
 	return err
 }
 
@@ -36,7 +36,7 @@ func (r *UserRepository) UserExistsByEmail(ctx context.Context, email string) (b
 
 func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	user := models.User{}
-	query := `SELECT id, username, first_name, last_name, email, password, created_at, updated_at FROM users WHERE email = $1`
+	query := `SELECT id, username, first_name, last_name, email, password, role, created_at, updated_at FROM users WHERE email = $1`
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&user.Id,
 		&user.UserName,
@@ -44,6 +44,7 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 		&user.LastName,
 		&user.Email,
 		&user.Password,
+		&user.Role,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -56,7 +57,7 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 
 func (r *UserRepository) GetUserById(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	user := models.User{}
-	query := `SELECT id, username, first_name, last_name, email, password, created_at, updated_at FROM users WHERE id = $1`
+	query := `SELECT id, username, first_name, last_name, email, password, role, created_at, updated_at FROM users WHERE id = $1`
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&user.Id,
 		&user.UserName,
@@ -64,6 +65,7 @@ func (r *UserRepository) GetUserById(ctx context.Context, id uuid.UUID) (*models
 		&user.LastName,
 		&user.Email,
 		&user.Password,
+		&user.Role,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)

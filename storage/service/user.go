@@ -42,6 +42,7 @@ func (s *UserService) RegisterUser(ctx context.Context, req *models.CreateUserRe
 		Email:     req.Email,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
+		Role:      "user",
 		CreatedAt: time.Time{},
 		UpdatedAt: time.Time{},
 	}
@@ -69,6 +70,7 @@ func (s *UserService) LoginUser(ctx context.Context, req *models.UserLoginDTO) (
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		Email:     user.Email,
+		Role:      user.Role,
 	}, nil
 }
 
@@ -83,5 +85,6 @@ func (s *UserService) ProfileUser(ctx context.Context, id uuid.UUID) (*models.Us
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		Email:     user.Email,
+		Role:      user.Role,
 	}, nil
 }

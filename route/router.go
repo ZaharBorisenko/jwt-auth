@@ -21,8 +21,11 @@ func MakeHTTPHandler(userService *service.UserService, redisClient *storage.Redi
 	protectedMux := http.NewServeMux()
 	protectedMux.HandleFunc("GET /profile/{id}", userHandler.GetProfile)
 
-	// Middleware for private routes
-	mux.Handle("/", middleware.AuthMiddleware(redisClient, protectedMux))
+	//middleware
+	protectedWithAuth := middleware.AuthMiddleware(redisClient, protectedMux)
+	mux.Handle("/", protectedWithAuth)
 
-	return mux
+	handlerWithLogging := middleware.Logging(mux)
+	return handlerWithLogging
+
 }

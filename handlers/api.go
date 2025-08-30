@@ -77,6 +77,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 		FirstName: createdUser.FirstName,
 		LastName:  createdUser.LastName,
 		Email:     createdUser.Email,
+		Role:      createdUser.Role,
 	}
 
 	WriteJSON(w, http.StatusCreated, response)
