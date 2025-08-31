@@ -88,3 +88,12 @@ func (s *UserService) ProfileUser(ctx context.Context, id uuid.UUID) (*models.Us
 		Role:      user.Role,
 	}, nil
 }
+
+func (s *UserService) AllUsers(ctx context.Context) (*[]models.User, error) {
+	users, err := s.userRepo.GetAllUsers(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("users not found %w", err)
+	}
+
+	return users, nil
+}

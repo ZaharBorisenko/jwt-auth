@@ -75,3 +75,34 @@ func (r *UserRepository) GetUserById(ctx context.Context, id uuid.UUID) (*models
 
 	return &user, nil
 }
+
+func (r *UserRepository) GetAllUsers(ctx context.Context) (*[]models.User, error) {
+	var users []models.User
+	query := `SELECT id, username, first_name, last_name, email, password, role, created_at, updated_at FROM users`
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		user := models.User{}
+		if err := rows.Scan(
+			&user.Id,
+			&user.UserName,
+			&user.FirstName,
+			&user.LastName,
+			&user.Email,
+			&user.Password,
+			&user.Role,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	return &users, nil
+}

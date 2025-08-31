@@ -179,3 +179,12 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, user)
 
 }
+
+func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	users, err := h.userService.AllUsers(r.Context())
+	if err != nil {
+		WriteERROR(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	WriteJSON(w, http.StatusOK, users)
+}

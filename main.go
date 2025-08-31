@@ -36,7 +36,7 @@ func main() {
 	redisClient := storage.NewRedisClient(redisAddr)
 	userRepo := repositories.NewUserRepository(db)
 	userService := service.NewUserService(userRepo, redisClient)
-	r := route.MakeHTTPHandler(userService, redisClient)
+	r := route.MakeHTTPHandler(userService, userRepo, redisClient)
 
 	log.Println("Server starting on :8080")
 	err = http.ListenAndServe(":8080", r)
