@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/ZaharBorisenko/jwt-auth/helpers/jwtToken"
@@ -187,4 +188,57 @@ func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	WriteJSON(w, http.StatusOK, users)
+}
+
+func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	if idStr == "" {
+		WriteERROR(w, http.StatusBadRequest, "ID parameter is required")
+		return
+	}
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		WriteERROR(w, http.StatusBadRequest, "Invalid UUID format")
+		return
+	}
+	err = h.userService.DeleteUser(context.Background(), id)
+	if err != nil {
+		WriteERROR(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]string{"status": "user successfully deleted"})
+}
+
+func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	if idStr == "" {
+		WriteERROR(w, http.StatusBadRequest, "ID parameter is required")
+		return
+	}
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		WriteERROR(w, http.StatusBadRequest, "Invalid UUID format")
+		return
+	}
+
+	userReq := models.UpdateUserRequestDTO{}
+	if err := json.NewDecoder(r.Body).Decode(&userReq); err != nil {
+		WriteERROR(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	userUpdate, err := h.userService.UpdateUser(context.Background(), id, &userReq)
+	if err != nil {
+		if strings.Contains(err.Error(), "user not found") {
+			WriteERROR(w, http.StatusNotFound, err.Error())
+		} else if strings.Contains(err.Error(), "email already taken") {
+			WriteERROR(w, http.StatusConflict, err.Error())
+		} else {
+			WriteERROR(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, userUpdate)
 }

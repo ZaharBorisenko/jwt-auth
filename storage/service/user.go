@@ -97,3 +97,59 @@ func (s *UserService) AllUsers(ctx context.Context) (*[]models.User, error) {
 
 	return users, nil
 }
+
+func (s *UserService) DeleteUser(ctx context.Context, id uuid.UUID) error {
+	_, err := s.userRepo.GetUserById(ctx, id)
+	if err != nil {
+		return fmt.Errorf("user not found %w", err)
+	}
+
+	err = s.userRepo.DeleteUser(ctx, id)
+	if err != nil {
+		return fmt.Errorf("user not deleted %w", err)
+	}
+	return nil
+}
+
+func (s *UserService) UpdateUser(ctx context.Context, id uuid.UUID, req *models.UpdateUserRequestDTO) (*models.UserResponseDTO, error) {
+	user, err := s.userRepo.GetUserById(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+	if req.UserName != "" {
+		user.UserName = req.UserName
+	}
+	if req.FirstName != "" {
+		user.FirstName = req.FirstName
+	}
+	if req.LastName != "" {
+		user.LastName = req.LastName
+	}
+
+	if req.Email != "" {
+		if req.Email != user.Email {
+			exists, err := s.userRepo.UserExistsByEmail(ctx, req.Email)
+			if err != nil {
+				return nil, err
+			}
+			if exists {
+				return nil, fmt.Errorf("email already taken")
+			}
+			user.Email = req.Email
+		}
+	}
+
+	err = s.userRepo.UpdateUser(ctx, user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update user: %w", err)
+	}
+
+	return &models.UserResponseDTO{
+		Id:        user.Id,
+		UserName:  user.UserName,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Role:      user.Role,
+	}, nil
+}

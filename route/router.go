@@ -21,10 +21,12 @@ func MakeHTTPHandler(userService *service.UserService, userRepo *repositories.Us
 	// Protected routes
 	protectedMux := http.NewServeMux()
 	protectedMux.HandleFunc("GET /profile/{id}", userHandler.GetProfile)
+	protectedMux.HandleFunc("PUT /profile/{id}", userHandler.UpdateUser)
 
 	//adminOnly routes
 	adminMux := http.NewServeMux()
 	adminMux.HandleFunc("GET /admin/users", userHandler.GetAllUsers)
+	adminMux.HandleFunc("DELETE /admin/user/{id}", userHandler.DeleteUser)
 
 	//middleware
 	protectedWithAuth := middleware.AuthMiddleware(redisClient, protectedMux)
