@@ -14,14 +14,17 @@ func MakeHTTPHandler(userService *service.UserService, userRepo *repositories.Us
 	userHandler := handlers.NewUserHandler(userService, redisClient)
 
 	// Public routes
-	mux.HandleFunc("POST /register", userHandler.Register)
-	mux.HandleFunc("POST /login", userHandler.Login)
-	mux.HandleFunc("POST /logout", userHandler.Logout)
+	mux.Handle("POST /register", middleware.RateLimitMiddleware(1, 2)(http.HandlerFunc(userHandler.Register)))
+	mux.Handle("POST /login", middleware.RateLimitMiddleware(2, 5)(http.HandlerFunc(userHandler.Login)))
+	mux.Handle("POST /logout", middleware.RateLimitMiddleware(5, 10)(http.HandlerFunc(userHandler.Logout)))
 
 	// Protected routes
 	protectedMux := http.NewServeMux()
-	protectedMux.HandleFunc("GET /profile/{id}", userHandler.GetProfile)
-	protectedMux.HandleFunc("PUT /profile/{id}", userHandler.UpdateUser)
+	protectedProfile := middleware.RateLimitMiddleware(2, 5)(http.HandlerFunc(userHandler.GetProfile))
+	protectedUpdate := middleware.RateLimitMiddleware(2, 5)(http.HandlerFunc(userHandler.UpdateUser))
+
+	protectedMux.Handle("GET /profile/{id}", protectedProfile)
+	protectedMux.Handle("PUT /profile/{id}", protectedUpdate)
 
 	//adminOnly routes
 	adminMux := http.NewServeMux()
@@ -30,7 +33,7 @@ func MakeHTTPHandler(userService *service.UserService, userRepo *repositories.Us
 
 	//middleware
 	protectedWithAuth := middleware.AuthMiddleware(redisClient, protectedMux)
-	withAdminAuth := middleware.AuthMiddleware(redisClient, middleware.AdminOnly(userRepo, adminMux))
+	withAdminAuth := middleware.AuthMiddleware(redisClient, middleware.RateLimitMiddleware(10, 20)(middleware.AdminOnly(userRepo, adminMux)))
 	mux.Handle("/", protectedWithAuth)
 
 	handlerWithLogging := middleware.Logging(mux)
