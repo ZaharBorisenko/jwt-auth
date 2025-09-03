@@ -6,6 +6,7 @@ import (
 	"github.com/ZaharBorisenko/jwt-auth/storage"
 	"github.com/ZaharBorisenko/jwt-auth/storage/repositories"
 	"github.com/ZaharBorisenko/jwt-auth/storage/service"
+	"github.com/ZaharBorisenko/jwt-auth/validator"
 	"github.com/joho/godotenv"
 	"log"
 	"net/http"
@@ -32,6 +33,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+	validator.Init()
 
 	redisClient := storage.NewRedisClient(redisAddr)
 	userRepo := repositories.NewUserRepository(db)

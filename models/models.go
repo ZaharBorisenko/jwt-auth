@@ -18,11 +18,11 @@ type User struct {
 }
 
 type CreateUserRequestDTO struct {
-	UserName  string `json:"userName"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Password  string `json:"password"`
-	Email     string `json:"email"`
+	UserName  string `json:"userName" validate:"required,min=3,max=50"`
+	FirstName string `json:"firstName" validate:"required,min=2,max=50"`
+	LastName  string `json:"lastName" validate:"required,min=2,max=50"`
+	Password  string `json:"password" validate:"required,min=6"`
+	Email     string `json:"email" validate:"required,email"`
 }
 
 type UserResponseDTO struct {
@@ -34,8 +34,9 @@ type UserResponseDTO struct {
 	Role      string    `json:"role"`
 }
 type UserLoginDTO struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email           string `json:"email" validate:"required,email"`
+	Password        string `json:"password" validate:"required,min=6"`
+	PasswordConfirm string `validate:"required,eqfield=Password"`
 }
 
 type UpdateUserRequestDTO struct {

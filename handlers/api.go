@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
+	"github.com/ZaharBorisenko/jwt-auth/helpers/JSON"
 	"github.com/ZaharBorisenko/jwt-auth/helpers/jwtToken"
+	"github.com/ZaharBorisenko/jwt-auth/helpers/parseUUID"
 	"github.com/ZaharBorisenko/jwt-auth/models"
 	"github.com/ZaharBorisenko/jwt-auth/storage"
 	"github.com/ZaharBorisenko/jwt-auth/storage/service"
-	"github.com/google/uuid"
+	"github.com/ZaharBorisenko/jwt-auth/validator"
 	"net/http"
 	"strings"
 	"time"
@@ -23,52 +23,21 @@ func NewUserHandler(userService *service.UserService, redisClient *storage.Redis
 	return &UserHandler{userService: userService, redisClient: redisClient}
 }
 
-type Error struct {
-	Error string
-}
-
-func WriteJSON(w http.ResponseWriter, statusCode int, data any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	err := json.NewEncoder(w).Encode(data)
-	if err != nil {
-		fmt.Printf("could not write json %v", err)
-	}
-}
-
-func WriteERROR(w http.ResponseWriter, statusCode int, message string) {
-	WriteJSON(w, statusCode, Error{Error: message})
-}
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		WriteERROR(w, http.StatusMethodNotAllowed, "method not allowed!")
+		JSON.WriteERROR(w, http.StatusMethodNotAllowed, "method not allowed!")
 		return
 	}
 	defer r.Body.Close()
 
 	userReq := models.CreateUserRequestDTO{}
-	err := json.NewDecoder(r.Body).Decode(&userReq)
-	if err != nil {
-		WriteERROR(w, http.StatusBadRequest, "invalid JSON")
-		return
-	}
-
-	if userReq.UserName == "" {
-		WriteERROR(w, http.StatusBadRequest, "username is required")
-		return
-	}
-	if userReq.Email == "" {
-		WriteERROR(w, http.StatusBadRequest, "email is required")
-		return
-	}
-	if userReq.Password == "" {
-		WriteERROR(w, http.StatusBadRequest, "password is required")
+	if !validator.ValidateRequest(w, r, &userReq) {
 		return
 	}
 
 	createdUser, err := h.userService.RegisterUser(r.Context(), &userReq)
 	if err != nil {
-		WriteERROR(w, http.StatusInternalServerError, err.Error())
+		JSON.WriteERROR(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -81,39 +50,32 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Role:      createdUser.Role,
 	}
 
-	WriteJSON(w, http.StatusCreated, response)
+	JSON.WriteJSON(w, http.StatusCreated, response)
 }
 
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		WriteERROR(w, http.StatusMethodNotAllowed, "method not allowed")
+		JSON.WriteERROR(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 	defer r.Body.Close()
 
 	userReq := models.UserLoginDTO{}
-
-	err := json.NewDecoder(r.Body).Decode(&userReq)
-	if err != nil {
-		WriteERROR(w, http.StatusBadRequest, "invalid JSON")
-		return
-	}
-	if userReq.Email == "" || userReq.Password == "" {
-		WriteERROR(w, http.StatusBadRequest, "email or password is required")
+	if !validator.ValidateRequest(w, r, &userReq) {
 		return
 	}
 
 	//authentication user
 	loginUser, err := h.userService.LoginUser(r.Context(), &userReq)
 	if err != nil {
-		WriteERROR(w, http.StatusBadRequest, err.Error())
+		JSON.WriteERROR(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	//generate JWT token
 	token, err := jwtToken.GenerateJWTToken(loginUser.Id, loginUser.Email)
 	if err != nil {
-		WriteERROR(w, http.StatusInternalServerError, "failed to generate token")
+		JSON.WriteERROR(w, http.StatusInternalServerError, "failed to generate token")
 		return
 	}
 
@@ -123,24 +85,24 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		"token": token,
 	}
 
-	WriteJSON(w, http.StatusOK, response)
+	JSON.WriteJSON(w, http.StatusOK, response)
 }
 
 func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		WriteERROR(w, http.StatusMethodNotAllowed, "method not allowed")
+		JSON.WriteERROR(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
-		WriteERROR(w, http.StatusUnauthorized, "Authorization header required")
+		JSON.WriteERROR(w, http.StatusUnauthorized, "Authorization header required")
 		return
 	}
 
 	parts := strings.Split(authHeader, " ")
 	if len(parts) != 2 || parts[0] != "Bearer" {
-		WriteERROR(w, http.StatusUnauthorized, "Invalid authorization format")
+		JSON.WriteERROR(w, http.StatusUnauthorized, "Invalid authorization format")
 		return
 	}
 
@@ -149,96 +111,80 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	expiration := 72 * time.Hour
 	err := h.redisClient.AddToBlackList(r.Context(), tokenString, expiration)
 	if err != nil {
-		WriteERROR(w, http.StatusInternalServerError, "Failed to logout")
+		JSON.WriteERROR(w, http.StatusInternalServerError, "Failed to logout")
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, map[string]string{
+	JSON.WriteJSON(w, http.StatusOK, map[string]string{
 		"message": "Successfully logged out",
 	})
 }
 
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	if idStr == "" {
-		WriteERROR(w, http.StatusBadRequest, "ID parameter is required")
-		return
-	}
-
-	id, err := uuid.Parse(idStr)
+	id, err := parseUUID.ParseUUID(r)
 	if err != nil {
-		WriteERROR(w, http.StatusBadRequest, "Invalid UUID format")
+		JSON.WriteERROR(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	user, err := h.userService.ProfileUser(r.Context(), id)
 	if err != nil {
-		WriteERROR(w, http.StatusBadRequest, err.Error())
+		JSON.WriteERROR(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, user)
+	JSON.WriteJSON(w, http.StatusOK, user)
 
 }
 
 func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.userService.AllUsers(r.Context())
 	if err != nil {
-		WriteERROR(w, http.StatusBadRequest, err.Error())
+		JSON.WriteERROR(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	WriteJSON(w, http.StatusOK, users)
+	JSON.WriteJSON(w, http.StatusOK, users)
 }
 
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	if idStr == "" {
-		WriteERROR(w, http.StatusBadRequest, "ID parameter is required")
-		return
-	}
-	id, err := uuid.Parse(idStr)
+	id, err := parseUUID.ParseUUID(r)
 	if err != nil {
-		WriteERROR(w, http.StatusBadRequest, "Invalid UUID format")
-		return
-	}
-	err = h.userService.DeleteUser(context.Background(), id)
-	if err != nil {
-		WriteERROR(w, http.StatusBadRequest, err.Error())
+		JSON.WriteERROR(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, map[string]string{"status": "user successfully deleted"})
+	err = h.userService.DeleteUser(context.Background(), id)
+	if err != nil {
+		JSON.WriteERROR(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	JSON.WriteJSON(w, http.StatusOK, map[string]string{"status": "user successfully deleted"})
 }
 
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	if idStr == "" {
-		WriteERROR(w, http.StatusBadRequest, "ID parameter is required")
-		return
-	}
-	id, err := uuid.Parse(idStr)
+	id, err := parseUUID.ParseUUID(r)
 	if err != nil {
-		WriteERROR(w, http.StatusBadRequest, "Invalid UUID format")
+		JSON.WriteERROR(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	userReq := models.UpdateUserRequestDTO{}
-	if err := json.NewDecoder(r.Body).Decode(&userReq); err != nil {
-		WriteERROR(w, http.StatusBadRequest, "Invalid JSON")
+	if !validator.ValidateRequest(w, r, &userReq) {
 		return
 	}
 
 	userUpdate, err := h.userService.UpdateUser(context.Background(), id, &userReq)
 	if err != nil {
 		if strings.Contains(err.Error(), "user not found") {
-			WriteERROR(w, http.StatusNotFound, err.Error())
+			JSON.WriteERROR(w, http.StatusNotFound, err.Error())
 		} else if strings.Contains(err.Error(), "email already taken") {
-			WriteERROR(w, http.StatusConflict, err.Error())
+			JSON.WriteERROR(w, http.StatusConflict, err.Error())
 		} else {
-			WriteERROR(w, http.StatusInternalServerError, err.Error())
+			JSON.WriteERROR(w, http.StatusInternalServerError, err.Error())
 		}
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, userUpdate)
+	JSON.WriteJSON(w, http.StatusOK, userUpdate)
 }
