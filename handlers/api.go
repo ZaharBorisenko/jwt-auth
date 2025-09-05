@@ -188,3 +188,13 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	JSON.WriteJSON(w, http.StatusOK, userUpdate)
 }
+
+func (h *UserHandler) GetBlackList(w http.ResponseWriter, r *http.Request) {
+	keys, err := h.redisClient.GetBlackListKeys(r.Context())
+	if err != nil {
+		JSON.WriteERROR(w, http.StatusInternalServerError, "Failed to get blacklist")
+		return
+	}
+
+	JSON.WriteJSON(w, http.StatusOK, keys)
+}

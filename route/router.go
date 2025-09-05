@@ -30,6 +30,7 @@ func MakeHTTPHandler(userService *service.UserService, userRepo *repositories.Us
 	adminMux := http.NewServeMux()
 	adminMux.HandleFunc("GET /admin/users", userHandler.GetAllUsers)
 	adminMux.HandleFunc("DELETE /admin/user/{id}", userHandler.DeleteUser)
+	adminMux.HandleFunc("GET /admin/blacklist", userHandler.GetBlackList)
 
 	//middleware
 	protectedWithAuth := middleware.AuthMiddleware(redisClient, protectedMux)
