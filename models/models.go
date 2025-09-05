@@ -53,3 +53,8 @@ type Config struct {
 	PASSWORD string
 	DBNAME   string
 }
+
+type PaginationConfig struct {
+	Offset int
+	Limit  int
+}

@@ -57,11 +57,11 @@ func (r *UserRepository) GetUserById(ctx context.Context, id uuid.UUID) (*models
 	return &user, nil
 }
 
-func (r *UserRepository) GetAllUsers(ctx context.Context) (*[]models.User, error) {
+func (r *UserRepository) GetAllUsers(ctx context.Context, config models.PaginationConfig) (*[]models.User, error) {
 	var users []models.User
-	query := `SELECT * FROM users`
+	query := `SELECT * FROM users LIMIT $1 OFFSET $2`
 
-	err := r.db.SelectContext(ctx, &users, query)
+	err := r.db.SelectContext(ctx, &users, query, config.Limit, config.Offset)
 	if err != nil {
 		return nil, err
 	}
