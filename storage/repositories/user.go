@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"github.com/ZaharBorisenko/jwt-auth/models"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -57,9 +58,9 @@ func (r *UserRepository) GetUserById(ctx context.Context, id uuid.UUID) (*models
 	return &user, nil
 }
 
-func (r *UserRepository) GetAllUsers(ctx context.Context, config models.PaginationConfig) (*[]models.User, error) {
+func (r *UserRepository) GetAllUsers(ctx context.Context, config models.ConfigURLParams) (*[]models.User, error) {
 	var users []models.User
-	query := `SELECT * FROM users LIMIT $1 OFFSET $2`
+	query := fmt.Sprintf(`SELECT * FROM users ORDER BY %s %s LIMIT $1 OFFSET $2`, config.Sort, config.Order)
 
 	err := r.db.SelectContext(ctx, &users, query, config.Limit, config.Offset)
 	if err != nil {

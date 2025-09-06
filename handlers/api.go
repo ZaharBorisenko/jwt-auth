@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"github.com/ZaharBorisenko/jwt-auth/helpers"
 	"github.com/ZaharBorisenko/jwt-auth/helpers/JSON"
 	"github.com/ZaharBorisenko/jwt-auth/helpers/jwtToken"
 	"github.com/ZaharBorisenko/jwt-auth/helpers/parseUUID"
@@ -10,7 +11,6 @@ import (
 	"github.com/ZaharBorisenko/jwt-auth/storage/service"
 	"github.com/ZaharBorisenko/jwt-auth/validator"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -139,27 +139,10 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	page, err := strconv.Atoi(r.URL.Query().Get("page"))
-	if err != nil || page < 1 {
-		page = 1
-	}
 
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-	if err != nil || limit < 1 {
-		limit = 10
-	}
-	if limit > 100 {
-		limit = 100
-	}
+	params := helpers.ParseQueryParams(r)
 
-	offset := (page - 1) * limit
-
-	pagination := models.PaginationConfig{
-		Offset: offset,
-		Limit:  limit,
-	}
-
-	users, err := h.userService.AllUsers(r.Context(), pagination)
+	users, err := h.userService.AllUsers(r.Context(), params)
 	if err != nil {
 		JSON.WriteERROR(w, http.StatusBadRequest, err.Error())
 		return

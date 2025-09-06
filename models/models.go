@@ -54,7 +54,9 @@ type Config struct {
 	DBNAME   string
 }
 
-type PaginationConfig struct {
+type ConfigURLParams struct {
 	Offset int
 	Limit  int
+	Sort   string
+	Order  string
 }

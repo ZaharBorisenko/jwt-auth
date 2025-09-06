@@ -89,7 +89,7 @@ func (s *UserService) ProfileUser(ctx context.Context, id uuid.UUID) (*models.Us
 	}, nil
 }
 
-func (s *UserService) AllUsers(ctx context.Context, config models.PaginationConfig) (*[]models.User, error) {
+func (s *UserService) AllUsers(ctx context.Context, config models.ConfigURLParams) (*[]models.User, error) {
 	users, err := s.userRepo.GetAllUsers(ctx, config)
 	if err != nil {
 		return nil, fmt.Errorf("users not found %w", err)
