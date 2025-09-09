@@ -48,7 +48,7 @@ services:
       - "-database"
       - "postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=disable"
       - "up"
-    restart: on-failure
+    restart: no
 
   redis:
     image: redis:7-alpine

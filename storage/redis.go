@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"github.com/redis/go-redis/v9"
 	"time"
 )
@@ -55,4 +56,23 @@ func (r *RedisClient) GetBlackListKeys(ctx context.Context) (map[string]map[stri
 	}
 
 	return result, nil
+}
+
+func (r *RedisClient) SaveVerificationCode(ctx context.Context, email string, code string) error {
+	key := fmt.Sprintf("verify:%s", email)
+	return r.client.Set(ctx, key, code, 15*time.Minute).Err()
+}
+
+func (r *RedisClient) GetVerificationCode(ctx context.Context, email string) (string, error) {
+	key := fmt.Sprintf("verify:%s", email)
+	code, err := r.client.Get(ctx, key).Result()
+	if err != nil {
+		return "", fmt.Errorf("verification code not found or expired")
+	}
+	return code, nil
+}
+
+func (r *RedisClient) DeleteVerificationCode(ctx context.Context, email string) error {
+	key := fmt.Sprintf("verify:%s", email)
+	return r.client.Del(ctx, key).Err()
 }

@@ -6,15 +6,16 @@ import (
 )
 
 type User struct {
-	Id        uuid.UUID `json:"id" db:"id"`
-	UserName  string    `json:"userName" db:"username"`
-	Password  string    `json:"password" db:"password"`
-	Email     string    `json:"email" db:"email"`
-	FirstName string    `json:"firstName" db:"first_name"`
-	LastName  string    `json:"lastName" db:"last_name"`
-	Role      string    `json:"role" db:"role"`
-	CreatedAt time.Time `json:"createdAt" db:"created_at"`
-	UpdatedAt time.Time `json:"updatedAt" db:"updated_at"`
+	Id         uuid.UUID `json:"id" db:"id"`
+	UserName   string    `json:"userName" db:"username"`
+	Password   string    `json:"password" db:"password"`
+	Email      string    `json:"email" db:"email"`
+	FirstName  string    `json:"firstName" db:"first_name"`
+	LastName   string    `json:"lastName" db:"last_name"`
+	Role       string    `json:"role" db:"role"`
+	IsVerified bool      `json:"isVerified" db:"is_verified"`
+	CreatedAt  time.Time `json:"createdAt" db:"created_at"`
+	UpdatedAt  time.Time `json:"updatedAt" db:"updated_at"`
 }
 
 type CreateUserRequestDTO struct {
@@ -46,6 +47,11 @@ type UpdateUserRequestDTO struct {
 	Email     string `json:"email"`
 }
 
+type VerificationEmailDto struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
 type Config struct {
 	HOST     string
 	PORT     string
@@ -59,4 +65,11 @@ type ConfigURLParams struct {
 	Limit  int
 	Sort   string
 	Order  string
+}
+
+type ConfigEmail struct {
+	Username string
+	Password string
+	Host     string
+	Port     string
 }

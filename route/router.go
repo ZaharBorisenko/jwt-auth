@@ -5,11 +5,11 @@ import (
 	"github.com/ZaharBorisenko/jwt-auth/middleware"
 	"github.com/ZaharBorisenko/jwt-auth/storage"
 	"github.com/ZaharBorisenko/jwt-auth/storage/repositories"
-	"github.com/ZaharBorisenko/jwt-auth/storage/service"
+	"github.com/ZaharBorisenko/jwt-auth/storage/services"
 	"net/http"
 )
 
-func MakeHTTPHandler(userService *service.UserService, userRepo *repositories.UserRepository, redisClient *storage.RedisClient) http.Handler {
+func MakeHTTPHandler(userService *services.UserService, userRepo *repositories.UserRepository, redisClient *storage.RedisClient) http.Handler {
 	mux := http.NewServeMux()
 	userHandler := handlers.NewUserHandler(userService, redisClient)
 
@@ -22,9 +22,13 @@ func MakeHTTPHandler(userService *service.UserService, userRepo *repositories.Us
 	protectedMux := http.NewServeMux()
 	protectedProfile := middleware.RateLimitMiddleware(2, 5)(http.HandlerFunc(userHandler.GetProfile))
 	protectedUpdate := middleware.RateLimitMiddleware(2, 5)(http.HandlerFunc(userHandler.UpdateUser))
+	protectedVerify := middleware.RateLimitMiddleware(2, 5)(http.HandlerFunc(userHandler.VerifyEmail))
+	protectedResendVerify := middleware.RateLimitMiddleware(2, 5)(http.HandlerFunc(userHandler.ResendVerificationCode))
 
 	protectedMux.Handle("GET /profile/{id}", protectedProfile)
 	protectedMux.Handle("PUT /profile/{id}", protectedUpdate)
+	protectedMux.Handle("POST /verify-email", protectedVerify)
+	protectedMux.Handle("POST /resend-verification", protectedResendVerify)
 
 	//adminOnly routes
 	adminMux := http.NewServeMux()

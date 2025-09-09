@@ -18,10 +18,10 @@ func NewUserRepository(db *sqlx.DB) *UserRepository {
 }
 
 func (r *UserRepository) CreateUser(ctx context.Context, user *models.User) error {
-	query := `INSERT INTO users (id, username, first_name, last_name, email, password, role, created_at, updated_at) 
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+	query := `INSERT INTO users (id, username, first_name, last_name, email, password, role,is_verified, created_at, updated_at) 
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
-	_, err := r.db.ExecContext(ctx, query, user.Id, user.UserName, user.FirstName, user.LastName, user.Email, user.Password, user.Role, user.CreatedAt, user.UpdatedAt)
+	_, err := r.db.ExecContext(ctx, query, user.Id, user.UserName, user.FirstName, user.LastName, user.Email, user.Password, user.Role, user.IsVerified, user.CreatedAt, user.UpdatedAt)
 	return err
 }
 
@@ -86,7 +86,8 @@ func (r *UserRepository) UpdateUser(ctx context.Context, user *models.User) erro
                  first_name = $2,
                  last_name = $3,
                  email = $4,
-                 updated_at = $5 WHERE id = $6
+                 is_verified = $5,
+                 updated_at = $6 WHERE id = $7
                  `
 
 	_, err := r.db.ExecContext(ctx, query,
@@ -94,6 +95,7 @@ func (r *UserRepository) UpdateUser(ctx context.Context, user *models.User) erro
 		user.FirstName,
 		user.LastName,
 		user.Email,
+		user.IsVerified,
 		time.Now(),
 		user.Id,
 	)

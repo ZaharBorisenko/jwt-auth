@@ -5,7 +5,7 @@ import (
 	"github.com/ZaharBorisenko/jwt-auth/route"
 	"github.com/ZaharBorisenko/jwt-auth/storage"
 	"github.com/ZaharBorisenko/jwt-auth/storage/repositories"
-	"github.com/ZaharBorisenko/jwt-auth/storage/service"
+	"github.com/ZaharBorisenko/jwt-auth/storage/services"
 	"github.com/ZaharBorisenko/jwt-auth/validator"
 	"github.com/joho/godotenv"
 	"log"
@@ -37,7 +37,7 @@ func main() {
 
 	redisClient := storage.NewRedisClient(redisAddr)
 	userRepo := repositories.NewUserRepository(db)
-	userService := service.NewUserService(userRepo, redisClient)
+	userService := services.NewUserService(userRepo, redisClient)
 	r := route.MakeHTTPHandler(userService, userRepo, redisClient)
 
 	log.Println("Server starting on :8080")

@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	"context"
@@ -7,7 +7,9 @@ import (
 	"github.com/ZaharBorisenko/jwt-auth/models"
 	"github.com/ZaharBorisenko/jwt-auth/storage"
 	"github.com/ZaharBorisenko/jwt-auth/storage/repositories"
+	"github.com/ZaharBorisenko/jwt-auth/utils"
 	"github.com/google/uuid"
+	"log"
 	"time"
 )
 
@@ -31,26 +33,40 @@ func (s *UserService) RegisterUser(ctx context.Context, req *models.CreateUserRe
 	}
 
 	hashPassword, err := password.HashPassword(req.Password)
+	verificationCode := utils.GenerateCodeEmail()
 	if err != nil {
 		return nil, err
 	}
 
 	user := models.User{
-		Id:        uuid.New(),
-		UserName:  req.UserName,
-		Password:  hashPassword,
-		Email:     req.Email,
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		Role:      "user",
-		CreatedAt: time.Time{},
-		UpdatedAt: time.Time{},
+		Id:         uuid.New(),
+		UserName:   req.UserName,
+		Password:   hashPassword,
+		Email:      req.Email,
+		FirstName:  req.FirstName,
+		LastName:   req.LastName,
+		Role:       "user",
+		IsVerified: false,
+		CreatedAt:  time.Time{},
+		UpdatedAt:  time.Time{},
 	}
 
 	err = s.userRepo.CreateUser(ctx, &user)
 	if err != nil {
 		return nil, err
 	}
+
+	err = s.redisClient.SaveVerificationCode(ctx, req.Email, verificationCode)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save verification code: %w", err)
+	}
+
+	go func() {
+		if err = utils.SendEmail("zaharborisenko617@gmail.com", verificationCode); err != nil { //user.Email
+			log.Printf("Failed to send verification email: %v", err)
+		}
+	}()
+
 	return &user, nil
 }
 
@@ -152,4 +168,56 @@ func (s *UserService) UpdateUser(ctx context.Context, id uuid.UUID, req *models.
 		Email:     user.Email,
 		Role:      user.Role,
 	}, nil
+}
+
+func (s *UserService) VerifyEmail(ctx context.Context, email, code string) error {
+	storedCode, err := s.redisClient.GetVerificationCode(ctx, email)
+	if err != nil {
+		return fmt.Errorf("verification code not found or expired")
+	}
+
+	if storedCode != code {
+		return fmt.Errorf("invalid verification code")
+	}
+
+	user, err := s.userRepo.GetUserByEmail(ctx, email)
+	if err != nil {
+		return fmt.Errorf("user not found")
+	}
+
+	user.IsVerified = true
+	err = s.userRepo.UpdateUser(ctx, user)
+	if err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	s.redisClient.DeleteVerificationCode(ctx, email)
+
+	return nil
+}
+
+func (s *UserService) ResendVerificationCode(ctx context.Context, email string) error {
+	user, err := s.userRepo.GetUserByEmail(ctx, email)
+	if err != nil {
+		return fmt.Errorf("user not found")
+	}
+
+	if user.IsVerified {
+		return fmt.Errorf("email already verified")
+	}
+
+	newCode := utils.GenerateCodeEmail()
+
+	err = s.redisClient.SaveVerificationCode(ctx, email, newCode)
+	if err != nil {
+		return fmt.Errorf("failed to save verification code: %w", err)
+	}
+
+	go func() {
+		if err := utils.SendEmail(email, newCode); err != nil {
+			log.Printf("Failed to resend verification email: %v", err)
+		}
+	}()
+
+	return nil
 }

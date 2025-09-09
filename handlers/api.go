@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/ZaharBorisenko/jwt-auth/helpers"
 	"github.com/ZaharBorisenko/jwt-auth/helpers/JSON"
 	"github.com/ZaharBorisenko/jwt-auth/helpers/jwtToken"
 	"github.com/ZaharBorisenko/jwt-auth/helpers/parseUUID"
 	"github.com/ZaharBorisenko/jwt-auth/models"
 	"github.com/ZaharBorisenko/jwt-auth/storage"
-	"github.com/ZaharBorisenko/jwt-auth/storage/service"
+	"github.com/ZaharBorisenko/jwt-auth/storage/services"
 	"github.com/ZaharBorisenko/jwt-auth/validator"
 	"net/http"
 	"strings"
@@ -16,11 +17,11 @@ import (
 )
 
 type UserHandler struct {
-	userService *service.UserService
+	userService *services.UserService
 	redisClient *storage.RedisClient
 }
 
-func NewUserHandler(userService *service.UserService, redisClient *storage.RedisClient) *UserHandler {
+func NewUserHandler(userService *services.UserService, redisClient *storage.RedisClient) *UserHandler {
 	return &UserHandler{userService: userService, redisClient: redisClient}
 }
 
@@ -201,4 +202,57 @@ func (h *UserHandler) GetBlackList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	JSON.WriteJSON(w, http.StatusOK, keys)
+}
+
+func (h *UserHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	request := models.VerificationEmailDto{}
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		JSON.WriteERROR(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+
+	if request.Email == "" || request.Code == "" {
+		JSON.WriteERROR(w, http.StatusBadRequest, "email and code are required")
+		return
+	}
+
+	err := h.userService.VerifyEmail(r.Context(), request.Email, request.Code)
+	if err != nil {
+		JSON.WriteERROR(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	JSON.WriteJSON(w, http.StatusOK, map[string]string{
+		"message": "Email successfully verified",
+	})
+}
+
+func (h *UserHandler) ResendVerificationCode(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		JSON.WriteERROR(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	defer r.Body.Close()
+
+	var request struct {
+		Email string `json:"email"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		JSON.WriteERROR(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+
+	err := h.userService.ResendVerificationCode(r.Context(), request.Email)
+	if err != nil {
+		JSON.WriteERROR(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	JSON.WriteJSON(w, http.StatusOK, map[string]string{
+		"message": "Verification code resent",
+	})
 }
