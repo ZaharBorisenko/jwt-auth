@@ -26,6 +26,17 @@ func NewUserHandler(userService *services.UserService, redisClient *storage.Redi
 	return &UserHandler{userService: userService, redisClient: redisClient}
 }
 
+// Register godoc
+// @Summary Register new user
+// @Description Create a new user account
+// @Tags authentication
+// @Accept  json
+// @Produce  json
+// @Param request body models.CreateUserRequestDTO true "User registration data"
+// @Success 201 {object} models.UserResponseDTO
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /register [post]
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		JSON.WriteERROR(w, http.StatusMethodNotAllowed, "method not allowed!")
@@ -56,6 +67,18 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	JSON.WriteJSON(w, http.StatusCreated, response)
 }
 
+// Login godoc
+// @Summary User login
+// @Description Authenticate user and get JWT token
+// @Tags authentication
+// @Accept  json
+// @Produce  json
+// @Param request body models.UserLoginDTO true "Login credentials"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /login [post]
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		JSON.WriteERROR(w, http.StatusMethodNotAllowed, "method not allowed")
@@ -91,6 +114,17 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	JSON.WriteJSON(w, http.StatusOK, response)
 }
 
+// Logout godoc
+// @Summary User logout
+// @Description Logout user and invalidate token
+// @Tags authentication
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Success 200 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /logout [post]
 func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		JSON.WriteERROR(w, http.StatusMethodNotAllowed, "method not allowed")
@@ -123,6 +157,18 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetProfile godoc
+// @Summary Get user profile
+// @Description Get user profile by ID
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param id path string true "User ID"
+// @Success 200 {object} models.User
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /profile/{id} [get]
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	id, err := parseUUID.ParseUUID(r)
 	if err != nil {
@@ -140,6 +186,23 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// GetAllUsers godoc
+// @Summary Get all users
+// @Description Get paginated list of all users (Admin only)
+// @Tags admin
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param offset query int false "Offset for pagination" default(0)
+// @Param limit query int false "Limit for pagination" default(10)
+// @Param sort query string false "Sort field" default(created_at)
+// @Param order query string false "Sort order" default(desc)
+// @Success 200 {array} models.User
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /admin/users [get]
 func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 
 	params := helpers.ParseQueryParams(r)
@@ -152,6 +215,21 @@ func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	JSON.WriteJSON(w, http.StatusOK, users)
 }
 
+// DeleteUser godoc
+// @Summary Delete user
+// @Description Delete user by ID (Admin only)
+// @Tags admin
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param id path string true "User ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /admin/user/{id} [delete]
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id, err := parseUUID.ParseUUID(r)
 	if err != nil {
@@ -168,6 +246,22 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	JSON.WriteJSON(w, http.StatusOK, map[string]string{"status": "user successfully deleted"})
 }
 
+// UpdateUser godoc
+// @Summary Update user profile
+// @Description Update user profile by ID
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param id path string true "User ID"
+// @Param request body models.UpdateUserRequestDTO true "User update data"
+// @Success 200 {object} models.User
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 409 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /profile/{id} [put]
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	id, err := parseUUID.ParseUUID(r)
 	if err != nil {
@@ -195,6 +289,18 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	JSON.WriteJSON(w, http.StatusOK, userUpdate)
 }
 
+// GetBlackList godoc
+// @Summary Get blacklisted tokens
+// @Description Get list of blacklisted JWT tokens (Admin only)
+// @Tags admin
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Success 200 {array} string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /admin/blacklist [get]
 func (h *UserHandler) GetBlackList(w http.ResponseWriter, r *http.Request) {
 	keys, err := h.redisClient.GetBlackListKeys(r.Context())
 	if err != nil {
@@ -205,6 +311,16 @@ func (h *UserHandler) GetBlackList(w http.ResponseWriter, r *http.Request) {
 	JSON.WriteJSON(w, http.StatusOK, keys)
 }
 
+// VerifyEmail godoc
+// @Summary Verify email
+// @Description Verify user email with verification code
+// @Tags authentication
+// @Accept  json
+// @Produce  json
+// @Param request body models.VerificationEmailDto true "Verification data"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /verify-email [post]
 func (h *UserHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
@@ -226,12 +342,21 @@ func (h *UserHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ResendVerificationCode godoc
+// @Summary Resend verification code
+// @Description Resend email verification code
+// @Tags authentication
+// @Accept  json
+// @Produce  json
+// @Param request body models.ResendVerificationRequest true "Email address"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /resend-verification [post]
 func (h *UserHandler) ResendVerificationCode(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	var request struct {
-		Email string `json:"email"`
-	}
+	var request models.ResendVerificationRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		JSON.WriteERROR(w, http.StatusBadRequest, "invalid JSON")
@@ -249,6 +374,19 @@ func (h *UserHandler) ResendVerificationCode(w http.ResponseWriter, r *http.Requ
 	})
 }
 
+// ChangePassword godoc
+// @Summary Change user password
+// @Description Change password for authenticated user
+// @Tags authentication
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param request body models.ChangePasswordDto true "Change password request"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /change-password [post]
 func (h *UserHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	req := models.ChangePasswordDto{}
 	if !validator.ValidateRequest(w, r, &req) {

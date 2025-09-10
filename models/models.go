@@ -19,11 +19,11 @@ type User struct {
 }
 
 type CreateUserRequestDTO struct {
-	UserName  string `json:"userName" validate:"required,min=3,max=50"`
-	FirstName string `json:"firstName" validate:"required,min=2,max=50"`
-	LastName  string `json:"lastName" validate:"required,min=2,max=50"`
-	Password  string `json:"password" validate:"required,min=6"`
-	Email     string `json:"email" validate:"required,email"`
+	UserName  string `json:"userName" validate:"required,min=3,max=50" example:"johndoe"`
+	FirstName string `json:"firstName" validate:"required,min=2,max=50" example:"John"`
+	LastName  string `json:"lastName" validate:"required,min=2,max=50" example:"Doe"`
+	Password  string `json:"password" validate:"required,min=6" example:"password123"`
+	Email     string `json:"email" validate:"required,email" example:"john.doe@example.com"`
 }
 
 type UserResponseDTO struct {
@@ -35,26 +35,31 @@ type UserResponseDTO struct {
 	Role      string    `json:"role"`
 }
 type UserLoginDTO struct {
-	Email           string `json:"email" validate:"required,email"`
-	Password        string `json:"password" validate:"required,min=6"`
+	Email           string `json:"email" validate:"required,email" example:"john.doe@example.com"`
+	Password        string `json:"password" validate:"required,min=6" example:"password123"`
 	PasswordConfirm string `validate:"required,eqfield=Password"`
 }
 
 type UpdateUserRequestDTO struct {
-	UserName  string `json:"userName"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Email     string `json:"email"`
+	UserName  string `json:"userName" example:"johndoe_updated"`
+	FirstName string `json:"firstName" example:"John_updated"`
+	LastName  string `json:"lastName" example:"Doe_updated"`
+	Email     string `json:"email" example:"john.updated@example.com"`
 }
 
 type VerificationEmailDto struct {
-	Email string `json:"email" validate:"required,email"`
-	Code  string `json:"code" validate:"required"`
+	Email string `json:"email" validate:"required,email" example:"john.doe@example.com"`
+	Code  string `json:"code" validate:"required" example:"123456"`
 }
+
 type ChangePasswordDto struct {
-	Email       string `json:"email" validate:"required,email"`
-	OldPassword string `json:"OldPassword" validate:"required,min=6"`
-	NewPassword string `json:"NewPassword" validate:"required,min=6"`
+	Email       string `json:"email" validate:"required,email" example:"john.doe@example.com"`
+	OldPassword string `json:"OldPassword" validate:"required,min=6" example:"oldPassword123"`
+	NewPassword string `json:"NewPassword" validate:"required,min=6" example:"newPassword456"`
+}
+
+type ResendVerificationRequest struct {
+	Email string `json:"email" validate:"required,email" example:"john.doe@example.com"`
 }
 
 type Config struct {

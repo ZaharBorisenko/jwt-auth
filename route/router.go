@@ -6,12 +6,16 @@ import (
 	"github.com/ZaharBorisenko/jwt-auth/storage"
 	"github.com/ZaharBorisenko/jwt-auth/storage/repositories"
 	"github.com/ZaharBorisenko/jwt-auth/storage/services"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"net/http"
 )
 
 func MakeHTTPHandler(userService *services.UserService, userRepo *repositories.UserRepository, redisClient *storage.RedisClient) http.Handler {
 	mux := http.NewServeMux()
 	userHandler := handlers.NewUserHandler(userService, redisClient)
+
+	// Swagger документация
+	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
 	// Public routes
 	mux.Handle("POST /register", middleware.RateLimitMiddleware(1, 2)(http.HandlerFunc(userHandler.Register)))

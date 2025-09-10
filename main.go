@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/ZaharBorisenko/jwt-auth/docs"
 	"github.com/ZaharBorisenko/jwt-auth/models"
 	"github.com/ZaharBorisenko/jwt-auth/route"
 	"github.com/ZaharBorisenko/jwt-auth/storage"
@@ -13,7 +14,28 @@ import (
 	"os"
 )
 
+// @title JWT Auth API
+// @version 1.0
+// @description JWT Authentication API with Go
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name @ZaharWeb007
+// @contact.email zaharborisenko617@gmail.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath http://localhost:8080
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
+	// Swagger настройки
+	docs.SwaggerInfo.Host = "localhost:8080"
+	docs.SwaggerInfo.BasePath = "/"
+	docs.SwaggerInfo.Schemes = []string{"http"}
+
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
 	}
