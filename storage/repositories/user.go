@@ -102,3 +102,18 @@ func (r *UserRepository) UpdateUser(ctx context.Context, user *models.User) erro
 
 	return err
 }
+
+func (r *UserRepository) UpdatePassword(ctx context.Context, userID uuid.UUID, newPasswordHash string) error {
+	query := `UPDATE users SET 
+                 password = $1,
+                 updated_at = $2 WHERE id = $3
+                 `
+
+	_, err := r.db.ExecContext(ctx, query,
+		newPasswordHash,
+		time.Now(),
+		userID,
+	)
+
+	return err
+}

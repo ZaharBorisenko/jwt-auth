@@ -11,6 +11,7 @@ import (
 	"github.com/ZaharBorisenko/jwt-auth/storage"
 	"github.com/ZaharBorisenko/jwt-auth/storage/services"
 	"github.com/ZaharBorisenko/jwt-auth/validator"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -214,11 +215,6 @@ func (h *UserHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if request.Email == "" || request.Code == "" {
-		JSON.WriteERROR(w, http.StatusBadRequest, "email and code are required")
-		return
-	}
-
 	err := h.userService.VerifyEmail(r.Context(), request.Email, request.Code)
 	if err != nil {
 		JSON.WriteERROR(w, http.StatusBadRequest, err.Error())
@@ -231,10 +227,6 @@ func (h *UserHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) ResendVerificationCode(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		JSON.WriteERROR(w, http.StatusMethodNotAllowed, "method not allowed")
-		return
-	}
 	defer r.Body.Close()
 
 	var request struct {
@@ -254,5 +246,26 @@ func (h *UserHandler) ResendVerificationCode(w http.ResponseWriter, r *http.Requ
 
 	JSON.WriteJSON(w, http.StatusOK, map[string]string{
 		"message": "Verification code resent",
+	})
+}
+
+func (h *UserHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	req := models.ChangePasswordDto{}
+	if !validator.ValidateRequest(w, r, &req) {
+		return
+	}
+
+	log.Println("Request data:", req)
+
+	err := h.userService.ChangePassword(r.Context(), &req)
+	if err != nil {
+		JSON.WriteERROR(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	log.Println("Password changed for email:", req.Email)
+
+	JSON.WriteJSON(w, http.StatusOK, map[string]string{
+		"message": "Password changed successfully",
 	})
 }

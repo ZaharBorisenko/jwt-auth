@@ -221,3 +221,28 @@ func (s *UserService) ResendVerificationCode(ctx context.Context, email string) 
 
 	return nil
 }
+
+func (s *UserService) ChangePassword(ctx context.Context, req *models.ChangePasswordDto) error {
+	user, err := s.userRepo.GetUserByEmail(ctx, req.Email)
+	if err != nil {
+		return fmt.Errorf("user not found")
+	}
+	if !password.CheckPassword(req.OldPassword, user.Password) {
+		return fmt.Errorf("password is incorrect")
+	}
+	if req.OldPassword == req.NewPassword {
+		return fmt.Errorf("passwords cannot be the same")
+	}
+	newPasswordHash, err := password.HashPassword(req.NewPassword)
+	if err != nil {
+		return fmt.Errorf("error hashPassword")
+	}
+	user.Password = newPasswordHash
+
+	err = s.userRepo.UpdatePassword(ctx, user.Id, newPasswordHash)
+	if err != nil {
+		return fmt.Errorf("failed to update password: %w", err)
+	}
+
+	return nil
+}

@@ -48,8 +48,13 @@ type UpdateUserRequestDTO struct {
 }
 
 type VerificationEmailDto struct {
-	Email string `json:"email"`
-	Code  string `json:"code"`
+	Email string `json:"email" validate:"required,email"`
+	Code  string `json:"code" validate:"required"`
+}
+type ChangePasswordDto struct {
+	Email       string `json:"email" validate:"required,email"`
+	OldPassword string `json:"OldPassword" validate:"required,min=6"`
+	NewPassword string `json:"NewPassword" validate:"required,min=6"`
 }
 
 type Config struct {

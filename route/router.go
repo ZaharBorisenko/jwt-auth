@@ -24,11 +24,13 @@ func MakeHTTPHandler(userService *services.UserService, userRepo *repositories.U
 	protectedUpdate := middleware.RateLimitMiddleware(2, 5)(http.HandlerFunc(userHandler.UpdateUser))
 	protectedVerify := middleware.RateLimitMiddleware(2, 5)(http.HandlerFunc(userHandler.VerifyEmail))
 	protectedResendVerify := middleware.RateLimitMiddleware(2, 5)(http.HandlerFunc(userHandler.ResendVerificationCode))
+	changePassword := middleware.RateLimitMiddleware(2, 5)(http.HandlerFunc(userHandler.ChangePassword))
 
 	protectedMux.Handle("GET /profile/{id}", protectedProfile)
 	protectedMux.Handle("PUT /profile/{id}", protectedUpdate)
 	protectedMux.Handle("POST /verify-email", protectedVerify)
 	protectedMux.Handle("POST /resend-verification", protectedResendVerify)
+	protectedMux.Handle("POST /change-password", changePassword)
 
 	//adminOnly routes
 	adminMux := http.NewServeMux()
